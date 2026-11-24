@@ -8,7 +8,7 @@ import requests
 import streamlit as st
 
 # ---------------- Configuration ----------------
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000").rstrip("/")
+API_URL = os.getenv("API_URL", "https://agm-cable.onrender.com").rstrip("/")
 API_TOKEN = os.getenv("APP_API_TOKEN", "")
 TIMEOUT = 30
 
@@ -128,7 +128,7 @@ def show_records_table(records: list[dict], key: str) -> None:
     display_df = df.drop(columns=["payment_screenshot"], errors="ignore")
     st.dataframe(
         display_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         key=key,
     )
@@ -205,6 +205,7 @@ page = st.sidebar.radio(
         "Dashboard",
         "Customer Management",
         "Add Customer",
+        "Bulk Add Customers",
         "Recharge Payment",
         "Monthly Recharge",
         "Pending Recharge",
@@ -361,7 +362,46 @@ elif page == "Add Customer":
                 st.json(result)
             except APIError as exc:
                 st.error(str(exc))
+# ---------------- Bulk Add Customers ----------------
+elif page == "Bulk Add Customers":
+    st.title("Bulk Add Customers")
+    st.caption("Add multiple customers in one submission.")
 
+    default_data = pd.DataFrame([
+        {"name": "", "phone_number": "", "tv_number": "", "place": ""}
+    ])
+
+    edited_data = st.data_editor(
+        default_data,
+        num_rows="dynamic",
+        width="stretch",
+        key="bulk_customer_editor"
+    )
+
+    if st.button("Add All Customers", type="primary"):
+        records = edited_data.fillna("").to_dict(orient="records")
+        customers = [
+            {
+                key: str(value).strip()
+                for key, value in record.items()
+            }
+            for record in records
+            if str(record.get("name", "")).strip()
+        ]
+
+        if not customers:
+            st.error("Enter at least one customer name.")
+        else:
+            try:
+                result = api_request(
+                    "POST",
+                    "/persons/bulk",
+                    json=customers
+                )
+                st.success(f"Successfully added {len(result)} customers!")
+                st.dataframe(pd.DataFrame(result), width="stretch")
+            except APIError as exc:
+                st.error(str(exc))
 
 # ---------------- Recharge Payment ----------------
 elif page == "Recharge Payment":
@@ -723,7 +763,7 @@ elif page == "Paid TV Numbers":
 
             st.dataframe(
                 tv_df,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
 
