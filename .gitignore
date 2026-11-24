@@ -1,0 +1,18 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Uploaded files
+uploads/
+
+# Excel dataset
+amp_cabel_sampel_data.xlsx
+
+# Temporary files
+temp/
+
+# Database
+*.db
